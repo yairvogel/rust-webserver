@@ -1,15 +1,28 @@
-use std::net::TcpListener;
 
 mod threadpool;
+mod async_listener;
+
+use std::{
+    net::{SocketAddr, IpAddr, Ipv4Addr}, io::ErrorKind
+};
+use threadpool::ThreadPool;
 
 fn main() {
-    let listener = TcpListener::bind("localhost:7878")
-        .expect("Failed to bind TCP listener to post 7878");
-    let thread_pool = threadpool::ThreadPool::new(4).unwrap();
 
-    for stream in listener.incoming() {
-        let stream = stream.unwrap();
+    let address = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 7878);
+    let thread_pool = ThreadPool::new(4).unwrap();
 
-        thread_pool.execute(|| webserver::handle_request(stream));
+    let mut listener = async_listener::AsyncListener::new(address)
+        .expect("Should be able to init listener");
+
+    // disabling SIGINT
+    ctrlc::set_handler(|| {})
+        .expect("Should be able to set handler");
+
+    // if let Err(error) = 
+    if let Err(err) = listener.run(|stream| thread_pool.execute(|| webserver::handle_request(stream))) {
+        if err.kind() != ErrorKind::Interrupted {
+            panic!("{err:?}")
+        }
     }
 }

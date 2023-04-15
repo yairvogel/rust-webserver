@@ -1,4 +1,4 @@
-use std::{path::Path, thread, time::Duration};
+use std::path::Path;
 
 use super::HttpRequest;
 
@@ -17,7 +17,7 @@ fn valid_response(request: &HttpRequest) -> String {
         (path.as_str(), "HTTP/1.1 200 OK") 
     } else 
     { 
-        ("/notfound", "HTTP/1.1 404 NOT FOUND")
+        ("notfound.html", "HTTP/1.1 404 NOT FOUND")
     };
 
     let content = std::fs::read_to_string(&path)
@@ -30,12 +30,6 @@ fn curate_path(request_path: &str) -> String {
     let path = request_path.strip_prefix("/").unwrap_or(request_path);
     match path {
         "/" | "" => String::from("index.html"),
-        "sleep" => { 
-            println!("sleeping");
-            thread::sleep(Duration::from_secs(1));
-            println!("woke up");
-            format!("{path}.html")
-        }
         path => { println!("got {path}"); format!("{path}.html") }
     }
 }
